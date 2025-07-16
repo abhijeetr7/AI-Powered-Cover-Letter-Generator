@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Cover Letter Generator</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 32px;
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        @media (min-width: 768px) {
+            .container {
+                flex-direction: row;
+                gap: 32px;
+            }
+        }
+        .input-section, .output-section, .drafts-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .input-group label {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+            display: block;
+        }
+        .input-group input,
+        .input-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 1rem;
+            color: #374151;
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .input-group input:focus,
+        .input-group textarea:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+        button {
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        button.primary {
+            background-color: #4f46e5;
+            color: #ffffff;
+            border: none;
+        }
+        button.primary:hover {
+            background-color: #4338ca;
+            transform: translateY(-1px);
+        }
+        button.secondary {
+            background-color: #e5e7eb;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+        button.secondary:hover {
+            background-color: #d1d5db;
+            transform: translateY(-1px);
+        }
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #ffffff;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .draft-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .draft-item:hover {
+            background-color: #f3f4f6;
+        }
+        .draft-item-content {
+            flex-grow: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .draft-item-actions button {
+            padding: 6px 10px;
+            font-size: 0.875rem;
+            margin-left: 8px;
+        }
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+        .modal.open {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: #ffffff;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Input Section -->
+        <div class="input-section">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Job & Your Details</h2>
+            <div class="input-group">
+                <label for="jobTitle">Job Title</label>
+                <input type="text" id="jobTitle" placeholder="e.g., Software Engineer">
+            </div>
+            <div class="input-group">
+                <label for="companyName">Company Name</label>
+                <input type="text" id="companyName" placeholder="e.g., Google Inc.">
+            </div>
+            <div class="input-group">
+                <label for="yourName">Your Name</label>
+                <input type="text" id="yourName" placeholder="e.g., Jane Doe">
+            </div>
+            <div class="input-group">
+                <label for="yourContactInfo">Your Contact Info (Email, Phone, LinkedIn)</label>
+                <textarea id="yourContactInfo" rows="3" placeholder="e.g., jane.doe@example.com | (123) 456-7890 | linkedin.com/in/janedoe"></textarea>
+            </div>
+            <div class="input-group">
+                <label for="customPrompt">Custom Prompt (Optional)</label>
+                <textarea id="customPrompt" rows="4" placeholder="e.g., Emphasize my experience in project management and leadership."></textarea>
+            </div>
+            <button id="generateBtn" class="primary">
+                <span id="generateBtnText">Generate/Refine Cover Letter</span>
+                <div id="generateSpinner" class="loading-spinner hidden"></div>
+            </button>
+            <p class="text-sm text-gray-500 mt-2">Your User ID: <span id="userIdDisplay" class="font-mono text-gray-700">Loading...</span></p>
+        </div>
+
+        <!-- Output Section -->
+        <div class="output-section">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Your Cover Letter</h2>
+            <div class="input-group flex-grow">
+                <textarea id="coverLetterContent" rows="20" class="h-full" placeholder="Your generated cover letter will appear here..."></textarea>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-4">
+                <button id="saveDraftBtn" class="secondary flex-1">Save Draft</button>
+                <button id="exportBtn" class="secondary flex-1">Export as .txt</button>
+            </div>
+        </div>
+
+        <!-- Drafts Section -->
+        <div class="drafts-section">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Saved Drafts</h2>
+            <div id="draftsList" class="flex flex-col gap-3 max-h-96 overflow-y-auto pr-2">
+                <!-- Draft items will be dynamically loaded here -->
+                <p class="text-gray-500 text-center" id="noDraftsMessage">No drafts saved yet.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Modal for Alerts/Confirmations -->
+    <div id="customModal" class="modal">
+        <div class="modal-content">
+            <p id="modalMessage" class="text-lg font-medium text-gray-800"></p>
+            <div class="modal-buttons">
+                <button id="modalConfirmBtn" class="primary hidden">Confirm</button>
+                <button id="modalCancelBtn" class="secondary">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, addDoc, setDoc, deleteDoc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables for Firebase instances and user data
+        let app;
+        let db;
+        let auth;
+        let userId = 'loading';
+        let isAuthReady = false;
+
+        // UI Elements
+        const jobTitleInput = document.getElementById('jobTitle');
+        const companyNameInput = document.getElementById('companyName');
+        const yourNameInput = document.getElementById('yourName');
+        const yourContactInfoInput = document.getElementById('yourContactInfo');
+        const customPromptInput = document.getElementById('customPrompt');
+        const coverLetterContentArea = document.getElementById('coverLetterContent');
+        const generateBtn = document.getElementById('generateBtn');
+        const generateBtnText = document.getElementById('generateBtnText');
+        const generateSpinner = document.getElementById('generateSpinner');
+        const saveDraftBtn = document.getElementById('saveDraftBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const draftsList = document.getElementById('draftsList');
+        const noDraftsMessage = document.getElementById('noDraftsMessage');
+        const userIdDisplay = document.getElementById('userIdDisplay');
+
+        // Modal Elements
+        const customModal = document.getElementById('customModal');
+        const modalMessage = document.getElementById('modalMessage');
+        const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+        const modalCancelBtn = document.getElementById('modalCancelBtn');
+
+        // State for current draft being edited/loaded
+        let currentDraftId = null;
+
+        // --- Utility Functions ---
+
+        /**
+         * Displays a custom modal message.
+         * @param {string} message - The message to display.
+         * @param {boolean} isConfirm - If true, shows a confirm button.
+         * @returns {Promise<boolean>} Resolves true if confirmed, false if cancelled.
+         */
+        function showModal(message, isConfirm = false) {
+            return new Promise((resolve) => {
+                modalMessage.textContent = message;
+                modalConfirmBtn.classList.toggle('hidden', !isConfirm);
+                customModal.classList.add('open');
+
+                const handleConfirm = () => {
+                    customModal.classList.remove('open');
+                    modalConfirmBtn.removeEventListener('click', handleConfirm);
+                    modalCancelBtn.removeEventListener('click', handleCancel);
+                    resolve(true);
+                };
+
+                const handleCancel = () => {
+                    customModal.classList.remove('open');
+                    modalConfirmBtn.removeEventListener('click', handleConfirm);
+                    modalCancelBtn.removeEventListener('click', handleCancel);
+                    resolve(false);
+                };
+
+                modalConfirmBtn.addEventListener('click', handleConfirm);
+                modalCancelBtn.addEventListener('click', handleCancel);
+            });
+        }
+
+        /**
+         * Sets the loading state for the generate button.
+         * @param {boolean} isLoading - True to show spinner, false to hide.
+         */
+        function setGenerateLoading(isLoading) {
+            generateBtn.disabled = isLoading;
+            if (isLoading) {
+                generateBtnText.textContent = 'Generating...';
+                generateSpinner.classList.remove('hidden');
+            } else {
+                generateBtnText.textContent = 'Generate/Refine Cover Letter';
+                generateSpinner.classList.add('hidden');
+            }
+        }
+
+        /**
+         * Sets the loading state for save/export buttons.
+         * @param {HTMLElement} button - The button element.
+         * @param {boolean} isLoading - True to disable, false to enable.
+         */
+        function setButtonLoading(button, isLoading) {
+            button.disabled = isLoading;
+            // You can add a spinner here if needed, similar to generateBtn
+        }
+
+        // --- Firebase Initialization and Authentication ---
+
+        /**
+         * Initializes Firebase and authenticates the user.
+         */
+        async function initializeFirebase() {
+            try {
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+
+                if (Object.keys(firebaseConfig).length === 0) {
+                    console.error("Firebase config is missing. Please ensure __firebase_config is set.");
+                    showModal("Firebase is not configured. Draft saving will not work.", false);
+                    return;
+                }
+
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        userIdDisplay.textContent = userId;
+                        isAuthReady = true;
+                        console.log("Firebase authenticated. User ID:", userId);
+                        setupFirestoreListener(); // Start listening to drafts after auth is ready
+                    } else {
+                        // Attempt to sign in with custom token or anonymously
+                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                            await signInWithCustomToken(auth, __initial_auth_token);
+                        } else {
+                            await signInAnonymously(auth);
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error("Error initializing Firebase:", error);
+                showModal("Failed to initialize Firebase. Draft saving may not work.", false);
+            }
+        }
+
+        // --- Firestore Operations ---
+
+        /**
+         * Sets up a real-time listener for user's cover letter drafts.
+         */
+        function setupFirestoreListener() {
+            if (!db || !userId || !isAuthReady) {
+                console.warn("Firestore not ready for listener. Retrying...");
+                setTimeout(setupFirestoreListener, 1000); // Retry after 1 second
+                return;
+            }
+
+            const draftsCollectionRef = collection(db, `artifacts/${__app_id}/users/${userId}/coverLetters`);
+            // Note: orderBy is commented out as per instructions to avoid index issues.
+            // Data will be sorted in memory.
+            const q = query(draftsCollectionRef); // , orderBy('timestamp', 'desc')
+
+            onSnapshot(q, (snapshot) => {
+                const fetchedDrafts = [];
+                snapshot.forEach((doc) => {
+                    fetchedDrafts.push({ id: doc.id, ...doc.data() });
+                });
+
+                // Sort drafts by timestamp in descending order in memory
+                fetchedDrafts.sort((a, b) => (b.timestamp?.toDate() || 0) - (a.timestamp?.toDate() || 0));
+
+                renderDrafts(fetchedDrafts);
+            }, (error) => {
+                console.error("Error listening to drafts:", error);
+                showModal("Failed to load drafts in real-time.", false);
+            });
+        }
+
+        /**
+         * Saves the current cover letter content as a draft to Firestore.
+         */
+        async function saveDraft() {
+            if (!isAuthReady || !db) {
+                showModal("Please wait for authentication to complete before saving.", false);
+                return;
+            }
+
+            const content = coverLetterContentArea.value.trim();
+            if (!content) {
+                showModal("Cannot save an empty cover letter.", false);
+                return;
+            }
+
+            const title = jobTitleInput.value.trim() || 'Untitled Draft';
+            const draftData = {
+                title: `Draft for ${title} at ${companyNameInput.value.trim() || 'Unknown Company'}`,
+                content: content,
+                timestamp: serverTimestamp()
+            };
+
+            setButtonLoading(saveDraftBtn, true);
+            try {
+                const draftsCollectionRef = collection(db, `artifacts/${__app_id}/users/${userId}/coverLetters`);
+                if (currentDraftId) {
+                    // Update existing draft
+                    await setDoc(doc(draftsCollectionRef, currentDraftId), draftData, { merge: true });
+                    showModal("Draft updated successfully!", false);
+                } else {
+                    // Add new draft
+                    const docRef = await addDoc(draftsCollectionRef, draftData);
+                    currentDraftId = docRef.id; // Set currentDraftId for the newly saved draft
+                    showModal("Draft saved successfully!", false);
+                }
+            } catch (error) {
+                console.error("Error saving draft:", error);
+                showModal("Failed to save draft. Please try again.", false);
+            } finally {
+                setButtonLoading(saveDraftBtn, false);
+            }
+        }
+
+        /**
+         * Loads a selected draft into the editor.
+         * @param {Object} draft - The draft object to load.
+         */
+        function loadDraft(draft) {
+            jobTitleInput.value = draft.title.split(' at ')[0].replace('Draft for ', '').trim();
+            companyNameInput.value = draft.title.split(' at ')[1]?.replace('Unknown Company', '').trim() || '';
+            coverLetterContentArea.value = draft.content;
+            currentDraftId = draft.id;
+            showModal(`Draft "${draft.title}" loaded.`, false);
+        }
+
+        /**
+         * Deletes a draft from Firestore.
+         * @param {string} draftId - The ID of the draft to delete.
+         * @param {string} draftTitle - The title of the draft for confirmation.
+         */
+        async function deleteDraft(draftId, draftTitle) {
+            const confirmed = await showModal(`Are you sure you want to delete "${draftTitle}"?`, true);
+            if (!confirmed) {
+                return;
+            }
+
+            if (!isAuthReady || !db) {
+                showModal("Please wait for authentication to complete before deleting.", false);
+                return;
+            }
+
+            try {
+                const draftsCollectionRef = collection(db, `artifacts/${__app_id}/users/${userId}/coverLetters`);
+                await deleteDoc(doc(draftsCollectionRef, draftId));
+                if (currentDraftId === draftId) {
+                    currentDraftId = null; // Clear if the deleted draft was currently loaded
+                    coverLetterContentArea.value = '';
+                    jobTitleInput.value = '';
+                    companyNameInput.value = '';
+                    yourNameInput.value = '';
+                    yourContactInfoInput.value = '';
+                    customPromptInput.value = '';
+                }
+                showModal("Draft deleted successfully!", false);
+            } catch (error) {
+                console.error("Error deleting draft:", error);
+                showModal("Failed to delete draft. Please try again.", false);
+            }
+        }
+
+        /**
+         * Renders the list of drafts in the UI.
+         * @param {Array<Object>} drafts - An array of draft objects.
+         */
+        function renderDrafts(drafts) {
+            draftsList.innerHTML = ''; // Clear existing drafts
+            if (drafts.length === 0) {
+                noDraftsMessage.classList.remove('hidden');
+                draftsList.appendChild(noDraftsMessage);
+            } else {
+                noDraftsMessage.classList.add('hidden');
+                drafts.forEach(draft => {
+                    const draftItem = document.createElement('div');
+                    draftItem.className = 'draft-item';
+                    draftItem.innerHTML = `
+                        <span class="draft-item-content font-medium text-gray-700">${draft.title}</span>
+                        <div class="draft-item-actions">
+                            <button class="secondary load-draft-btn">Load</button>
+                            <button class="secondary delete-draft-btn">Delete</button>
+                        </div>
+                    `;
+                    draftItem.querySelector('.load-draft-btn').addEventListener('click', (e) => {
+                        e.stopPropagation(); // Prevent parent click
+                        loadDraft(draft);
+                    });
+                    draftItem.querySelector('.delete-draft-btn').addEventListener('click', (e) => {
+                        e.stopPropagation(); // Prevent parent click
+                        deleteDraft(draft.id, draft.title);
+                    });
+                    draftsList.appendChild(draftItem);
+                });
+            }
+        }
+
+        // --- AI Generation Logic ---
+
+        /**
+         * Generates or refines the cover letter using the Gemini API.
+         */
+        async function generateCoverLetter() {
+            const jobTitle = jobTitleInput.value.trim();
+            const companyName = companyNameInput.value.trim();
+            const yourName = yourNameInput.value.trim();
+            const yourContactInfo = yourContactInfoInput.value.trim();
+            const customPrompt = customPromptInput.value.trim();
+
+            if (!jobTitle || !companyName || !yourName || !yourContactInfo) {
+                showModal("Please fill in Job Title, Company Name, Your Name, and Your Contact Info to generate a letter.", false);
+                return;
+            }
+
+            setGenerateLoading(true);
+
+            // Construct the prompt for the LLM
+            let prompt = `Write a professional cover letter for the position of "${jobTitle}" at "${companyName}".`;
+            prompt += `\n\nMy name is ${yourName} and my contact information is: ${yourContactInfo}.`;
+            prompt += `\n\nThe letter should be tailored to the role and company, highlighting my suitability.`;
+
+            if (customPrompt) {
+                prompt += `\n\nAdditionally, please incorporate the following: "${customPrompt}"`;
+            }
+
+            try {
+                let chatHistory = [];
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+
+                const payload = { contents: chatHistory };
+                const apiKey = ""; // Canvas will provide this at runtime for gemini-2.0-flash
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
+                }
+
+                const result = await response.json();
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    coverLetterContentArea.value = text;
+                    showModal("Cover letter generated successfully!", false);
+                } else {
+                    showModal("Failed to generate cover letter. No content received from AI.", false);
+                    console.error("AI response structure unexpected:", result);
+                }
+            } catch (error) {
+                console.error("Error generating cover letter:", error);
+                showModal(`Error generating cover letter: ${error.message}. Please try again.`, false);
+            } finally {
+                setGenerateLoading(false);
+            }
+        }
+
+        // --- Export Functionality ---
+
+        /**
+         * Exports the current cover letter content as a .txt file.
+         */
+        function exportLetter() {
+            const content = coverLetterContentArea.value.trim();
+            if (!content) {
+                showModal("There's no cover letter content to export.", false);
+                return;
+            }
+
+            const jobTitle = jobTitleInput.value.trim() || 'Untitled';
+            const companyName = companyNameInput.value.trim() || 'UnknownCompany';
+            const filename = `CoverLetter_${jobTitle}_${companyName}.txt`.replace(/[^a-zA-Z0-9._-]/g, '_'); // Sanitize filename
+
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url); // Clean up the URL object
+
+            showModal("Cover letter exported successfully!", false);
+        }
+
+        // --- Event Listeners ---
+        generateBtn.addEventListener('click', generateCoverLetter);
+        saveDraftBtn.addEventListener('click', saveDraft);
+        exportBtn.addEventListener('click', exportLetter);
+
+        // Initialize Firebase on window load
+        window.onload = initializeFirebase;
+    </script>
+</body>
+</html>
